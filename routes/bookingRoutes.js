@@ -1,18 +1,24 @@
+// routes/bookingRoutes.js
 const express = require("express");
-const { authenticate } = require("../middlewares/authMiddleware");
+const { verifyToken } = require("../middlewares/authMiddleware");
 const {
   createBooking,
   getUserBookings,
   getBookedSlots,
   deleteBooking,
 } = require("../controllers/bookingController");
-
 const router = express.Router();
 
-// Создание записи
-router.post("/", authenticate, createBooking);
-// Получение всех записей пользователя
-router.get("/", authenticate, getUserBookings);
-router.get("/booked-slots/:masterId", getBookedSlots);
-router.delete("/:id", deleteBooking);
+// Клиент создаёт запись
+router.post("/", verifyToken, createBooking);
+
+// Клиент получает свои записи
+router.get("/", verifyToken, getUserBookings);
+
+// Получение забронированных слотов для сотрудника (без авторизации)
+router.get("/booked-slots/:employeeId", getBookedSlots);
+
+// Удаление записи (без ограничения ролей, можно добавить проверку внутри контроллера)
+router.delete("/:id", verifyToken, deleteBooking);
+
 module.exports = router;

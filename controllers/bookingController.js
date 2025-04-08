@@ -1,91 +1,62 @@
+// controllers/bookingController.js
 const pool = require("../config/db");
 
-// Контроллер для создания записи
+// Создание записи
 exports.createBooking = async (req, res) => {
+  const { employee_id, service_id, date, time } = req.body;
   try {
-    const { master_id, date, time } = req.body;
-    const user_id = req.user.id;
-
-    if (!master_id || !date || !time) {
-      return res
-        .status(400)
-        .json({ error: "Все поля обязательны для заполнения" });
-    }
-
-    // Запись в базу данных без учета временной зоны
-    await pool.query(
-      `INSERT INTO bookings (user_id, master_id, date, time) 
-       VALUES ($1, $2, $3, $4)`,
-      [user_id, master_id, date, time]
+    const result = await pool.query(
+      "INSERT INTO bookings (user_id, employee_id, service_id, date, time) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [req.user.id, employee_id, service_id, date, time]
     );
-
-    res.status(201).json({ message: "Запись успешно создана" });
+    res.json(result.rows[0]);
   } catch (err) {
-    console.error("Ошибка при создании записи:", err.message);
-    res.status(500).json({ error: "Внутренняя ошибка сервера" });
+    console.error(err);
+    res.status(500).json({ error: "Ошибка создания записи" });
   }
 };
 
-// Контроллер для получения записей пользователя
+// Получение записей пользователя (для клиентов)
 exports.getUserBookings = async (req, res) => {
   try {
-    const user_id = req.user.id;
-
-    const bookings = await pool.query(
-      `SELECT 
-          b.id, 
-          CONCAT(m.name, ' ', m.surname) AS master_name, 
-          bs.name AS barbershop_name, 
-          b.date, 
-          b.time 
-       FROM bookings b
-       JOIN masters m ON b.master_id = m.id
-       JOIN barbershops bs ON m.barbershop_id = bs.id
-       WHERE b.user_id = $1
-       ORDER BY b.date, b.time`,
-      [user_id]
-    );
-
-    res.status(200).json(bookings.rows);
-  } catch (err) {
-    console.error("Ошибка при получении записей:", err.message);
-    res.status(500).json({ error: "Внутренняя ошибка сервера" });
-  }
-};
-exports.getBookedSlots = async (req, res) => {
-  try {
-    const { masterId } = req.params;
-    console.log("Получен master_id:", masterId);
-
-    const bookedSlots = await pool.query(
-      `SELECT date, time FROM bookings WHERE master_id = $1 ORDER BY date, time`,
-      [masterId]
-    );
-
-    console.log("Результат запроса:", bookedSlots.rows);
-
-    res.status(200).json(bookedSlots.rows);
-  } catch (err) {
-    console.error("Ошибка при получении забронированных слотов:", err.message);
-    res.status(500).json({ error: "Внутренняя ошибка сервера" });
-  }
-};
-exports.deleteBooking = async (req, res) => {
-  try {
-    const { id } = req.params;
-
     const result = await pool.query(
-      `DELETE FROM bookings WHERE id = $1 RETURNING *`,
-      [id]
+      `SELECT b.*, s.name as service_name
+       FROM bookings b
+       JOIN services s ON b.service_id = s.id
+       WHERE b.user_id = $1`,
+      [req.user.id]
     );
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: "Запись не найдена" });
-    }
-
-    res.status(200).json({ message: "Запись успешно удалена" });
+    res.json(result.rows);
   } catch (err) {
-    console.error("Ошибка при удалении записи:", err.message);
-    res.status(500).json({ error: "Внутренняя ошибка сервера" });
+    console.error(err);
+    res.status(500).json({ error: "Ошибка получения записей" });
+  }
+};
+
+// Получение забронированных слотов для сотрудника (или для показа доступного времени)
+exports.getBookedSlots = async (req, res) => {
+  const { employeeId } = req.params;
+  try {
+    const result = await pool.query(
+      "SELECT date, time FROM bookings WHERE employee_id = $1",
+      [employeeId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Ошибка получения забронированных слотов" });
+  }
+};
+
+// Удаление записи (может удалять клиент или сотрудник)
+exports.deleteBooking = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Для клиента проверяем, что запись принадлежит ему
+    await pool.query("DELETE FROM bookings WHERE id = $1", [id]);
+    res.json({ message: "Запись удалена" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Ошибка удаления записи" });
   }
 };
