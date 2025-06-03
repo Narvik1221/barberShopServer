@@ -16,8 +16,23 @@ router.get("/salon/:salon_id", getServicesBySalon);
 router.get("/:id", getServiceById);
 
 // Управление услугами – только для админов
-router.post("/", verifyToken, checkRole(["admin"]), createService);
-router.put("/:id", verifyToken, checkRole(["admin"]), updateService);
-router.delete("/:id", verifyToken, checkRole(["admin"]), deleteService);
+router.post(
+  "/",
+  verifyToken,
+  checkRole(["admin", "salon_admin"]),
+  createService
+);
+router.put(
+  "/:id",
+  verifyToken,
+  checkRole(["admin", "salon_admin"]),
+  updateService
+);
+router.delete(
+  "/:id",
+  verifyToken,
+  checkRole(["admin", "salon_admin"]),
+  deleteService
+);
 
 module.exports = router;

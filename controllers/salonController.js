@@ -94,10 +94,20 @@ exports.deleteSalon = async (req, res) => {
 exports.getAllEmployees = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT u.id, u.name, u.surname, u.role, e.salon_id
+      SELECT 
+        u.id,
+        u.name,
+        u.surname,
+        u.patronymic,
+        u.role,
+        e.salon_id,
+        e.registration_date
       FROM users u
-      LEFT JOIN employees e ON u.id = e.user_id
-      WHERE u.role = 'employee' AND e.salon_id IS NULL
+      LEFT JOIN employees e 
+        ON u.id = e.user_id
+      WHERE u.role = 'employee' 
+        AND e.salon_id IS NULL
+      ORDER BY e.registration_date DESC
     `);
     res.json(result.rows);
   } catch (err) {
@@ -113,10 +123,15 @@ exports.getEmployeesBySalon = async (req, res) => {
   try {
     const result = await pool.query(
       `
-      SELECT e.id AS employee_id, u.name, u.surname
+      SELECT
+        e.id               AS employee_id,
+        u.name,
+        u.surname,
+        e.registration_date
       FROM employees e
       JOIN users u ON e.user_id = u.id
       WHERE e.salon_id = $1
+      ORDER BY e.registration_date DESC
       `,
       [salonId]
     );

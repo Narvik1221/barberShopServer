@@ -78,19 +78,20 @@ exports.getUserBookings = async (req, res) => {
           sal.name AS salon_name,
           sal.address AS salon_address,
           sal.description AS salon_description,
-          sal."imagesrc" AS salon_imagesrc
+          sal."imagesrc" AS salon_imagesrc,
+          e.registration_date AS master_registration_date
        FROM bookings b
        JOIN services serv ON b.service_id = serv.id
        JOIN employees e ON b.employee_id = e.id
        JOIN users u ON e.user_id = u.id
        JOIN salons sal ON e.salon_id = sal.id
-       WHERE b.user_id = $1`,
+       WHERE b.user_id = $1
+      `,
       [req.user.id]
     );
     res.json(result.rows);
   } catch (err) {
     console.error("Ошибка при выполнении запроса getUserBookings:", err);
-    // Дополнительное логирование для отладки:
     if (err.stack) {
       console.error("Stack trace:", err.stack);
     }

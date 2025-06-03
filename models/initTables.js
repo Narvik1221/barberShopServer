@@ -1,20 +1,20 @@
-// models/initTables.js
 const pool = require("../config/db");
 
 const createTables = async () => {
   try {
     await pool.query(`
-      -- Таблица пользователей с указанием роли (client, employee, admin)
+      -- Таблица пользователей
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         surname VARCHAR(100),
+        patronymic VARCHAR(100),
         email VARCHAR(100) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
-        role VARCHAR(20) DEFAULT 'client'
+        role VARCHAR(20) DEFAULT 'client' -- client | employee | salon_admin | admin
       );
 
-      -- Таблица салонов (информация о салоне)
+      -- Таблица салонов
       CREATE TABLE IF NOT EXISTS salons (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
@@ -23,15 +23,16 @@ const createTables = async () => {
         imageSrc VARCHAR(255)
       );
 
-      -- Таблица сотрудников, привязанных к пользователю и салону
+      -- Таблица сотрудников
       CREATE TABLE IF NOT EXISTS employees (
         id SERIAL PRIMARY KEY,
         user_id INTEGER UNIQUE REFERENCES users(id),
         salon_id INTEGER REFERENCES salons(id),
-        status VARCHAR(50) DEFAULT 'active'
+        type VARCHAR(20) NOT NULL DEFAULT 'staff', -- staff | salon_admin
+        status VARCHAR(50) DEFAULT 'active',
+        registration_date TIMESTAMP NOT NULL DEFAULT NOW()
       );
-
-      -- Таблица услуг, предоставляемых в салоне
+      -- Таблица услуг
       CREATE TABLE IF NOT EXISTS services (
         id SERIAL PRIMARY KEY,
         salon_id INTEGER REFERENCES salons(id),
@@ -40,14 +41,14 @@ const createTables = async () => {
         price DECIMAL(10,2)
       );
 
-      -- Связующая таблица сотрудников и услуг (какие услуги предоставляет сотрудник)
+      -- Связующая таблица employee_services
       CREATE TABLE IF NOT EXISTS employee_services (
         id SERIAL PRIMARY KEY,
         employee_id INTEGER REFERENCES employees(id),
         service_id INTEGER REFERENCES services(id)
       );
 
-      -- Таблица записей клиентов. Запись содержит клиента, сотрудника и услугу
+      -- Таблица бронирований
       CREATE TABLE IF NOT EXISTS bookings (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id),

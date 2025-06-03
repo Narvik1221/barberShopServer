@@ -25,21 +25,31 @@ router.get("/salon/:id", getSalonById);
 router.post(
   "/",
   verifyToken,
-  checkRole(["admin"]),
+  checkRole(["admin", "salon_admin"]),
   upload.single("image"),
   createSalon
 );
 router.put(
   "/:id",
   verifyToken,
-  checkRole(["admin"]),
+  checkRole(["admin", "salon_admin"]),
   upload.single("image"),
   updateSalon
 );
-router.delete("/:id", verifyToken, checkRole(["admin"]), deleteSalon);
+router.delete(
+  "/:id",
+  verifyToken,
+  checkRole(["admin", "salon_admin"]),
+  deleteSalon
+);
 
 // Получить всех сотрудников (админ)
-router.get("/employees", verifyToken, checkRole(["admin"]), getAllEmployees);
+router.get(
+  "/employees",
+  verifyToken,
+  checkRole(["admin", "salon_admin"]),
+  getAllEmployees
+);
 
 router.get("/:id/employees", getEmployeesBySalon);
 
@@ -47,7 +57,7 @@ router.get("/:id/employees", getEmployeesBySalon);
 router.post(
   "/employees/:salonId",
   verifyToken,
-  checkRole(["admin"]),
+  checkRole(["admin", "salon_admin"]),
 
   attachEmployeesToSalon
 );
@@ -56,7 +66,7 @@ router.post(
 router.delete(
   "/employees/detach/:employeeId",
   verifyToken,
-  checkRole(["admin"]),
+  checkRole(["admin", "salon_admin"]),
   detachEmployee
 );
 module.exports = router;

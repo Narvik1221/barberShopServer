@@ -9,5 +9,13 @@ router.get(
   verifyToken,
   employeeController.getEmployeeAppointments
 );
+router.get("/salon/:salon_id", employeeController.getEmployeesBySalon);
+router.get("/salon-service", employeeController.getEmployeesBySalonAndService);
+
+router.get("/admins/candidates", employeeController.getSalonAdminCandidates);
+router.post(
+  "/salons/:salonId/assign-salon-admin",
+  employeeController.assignSalonAdmin
+);
 
 module.exports = router;
